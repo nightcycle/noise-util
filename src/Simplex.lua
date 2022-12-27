@@ -1,10 +1,10 @@
 --!strict
-local Algebra = require(script.Parent.Parent:WaitForChild("Algebra"))
+local CurveUtil = require(script.Parent.Parent:WaitForChild("CurveUtil"))
 
-local Vector = require(script.Parent.Parent:WaitForChild("Algebra"):WaitForChild("Vector"))
+local Vector = require(script.Parent.Parent:WaitForChild("Vector"))
 type Vector = Vector.Vector
 
-local Matrix = require(script.Parent.Parent:WaitForChild("Algebra"):WaitForChild("Matrix"))
+local Matrix = require(script.Parent.Parent:WaitForChild("Matrix"))
 type Matrix = Matrix.Matrix
 
 local Solver = require(script.Parent:WaitForChild("Solver"))
@@ -103,7 +103,7 @@ function Simplex:Get(vec: Vector): number
 			local alpha = adjDist / b
 			alpha = (alpha ^ 2) * (3.0 - 2.0 * alpha)
 			local finalPoint = p1:Lerp(p2, alpha)
-			local finalValue = Algebra.lerp(v1, v2, alpha)
+			local finalValue = CurveUtil.lerp(v1, v2, alpha)
 
 			table.insert(finalPointsList, finalPoint)
 			table.insert(finalValues, finalValue)

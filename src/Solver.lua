@@ -4,15 +4,14 @@
 local NoiseSolver: {[any]: any} = {}
 NoiseSolver.__index = NoiseSolver
 
-local Types = require(script.Parent.Parent.Types)
-local Vector = require(script.Parent.Parent.Algebra.Vector)
+local Vector = require(script.Parent.Parent.Vector)
 type Vector = Vector.Vector
 
-local Matrix = require(script.Parent.Parent.Algebra.Matrix)
+local Matrix = require(script.Parent.Parent.Matrix)
 type Matrix = Matrix.Matrix
 
 
-type Alpha = Types.Alpha
+type Alpha = number
 
 --- An easy way to convert an unknown type into a vector
 function NoiseSolver.translateVector(vec: Vector | Vector2 | Vector3): Vector
@@ -123,7 +122,7 @@ end
 
 --- Allows you to quickly render a 2d noise map with control over the red, green, and blue channels.
 function NoiseSolver:Debug(parentGui: Frame, scale: number?, rMatrix: Matrix, gMatrix: Matrix, bMatrix: Matrix): nil
-	
+
 	scale = scale or 1
 	assert(scale ~= nil)
 	gMatrix = gMatrix or rMatrix
@@ -334,7 +333,7 @@ function NoiseSolver._new()
 		Points = {} :: {[any]: Vector},
 		SeparationLimit = 0,
 	}
-	
+
 	setmetatable(self, NoiseSolver)
 
 	return self
@@ -351,7 +350,7 @@ function NoiseSolver.new(
 )
 	local solver: NoiseSolver = NoiseSolver._new()
 	assert(getmetatable(solver) == NoiseSolver)
-	
+
 	solver:Set(
 		seed,
 		frequency,

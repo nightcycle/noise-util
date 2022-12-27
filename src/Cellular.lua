@@ -1,8 +1,8 @@
 --!strict
-local Vector = require(script.Parent.Parent:WaitForChild("Algebra"):WaitForChild("Vector"))
+local Vector = require(script.Parent.Parent:WaitForChild("Vector"))
 type Vector = Vector.Vector
 
-local Matrix = require(script.Parent.Parent:WaitForChild("Algebra"):WaitForChild("Matrix"))
+local Matrix = require(script.Parent.Parent:WaitForChild("Matrix"))
 type Matrix = Matrix.Matrix
 
 local Solver = require(script.Parent:WaitForChild("Solver"))

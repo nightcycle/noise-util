@@ -1,12 +1,13 @@
 [package]
 name = "nightcycle/noise-util"
 description = "A noise util!"
-version = "1.0.0"
+version = "1.0.3"
 authors = ["CJ Oyer <coyer@nightcycle.us>"]
 realm = "shared"
 registry = "https://github.com/upliftgames/wally-index"
 exclude = ["Packages", ".vscode"]
 
 [dependencies]
+CurveUtil = "nightcycle/curve-util@^1.0.0"
 Vector = "nightcycle/vector@^1.0.2"
 Matrix = "nightcycle/matrix@^1.0.1"
