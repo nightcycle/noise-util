@@ -20,7 +20,7 @@ function Voronoi:Get(vec: Vector): number
 	local cDist: number = math.huge
 
 	for i, point: Vector in ipairs(points) do
-		local dist = (point - vec).Magnitude
+		local dist = (point - vec :: any).Magnitude
 		if not closest or dist < cDist then
 			closest = point
 			cDist = dist
@@ -37,8 +37,7 @@ function Voronoi:Clone(): NoiseSolver
 end
 
 function Voronoi.new(...): NoiseSolver
-	local self = Solver.new(...)
-	setmetatable(self, Voronoi)
+	local self: NoiseSolver = setmetatable(Solver.new(...), Voronoi) :: any
 	return self
 end
 

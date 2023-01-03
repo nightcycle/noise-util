@@ -22,7 +22,7 @@ function Cellular:Get(vec: Vector): number
 	local fDist: number = 0
 
 	for i, point: Vector in ipairs(points) do
-		local dist = (point - vec).Magnitude
+		local dist = (point - vec :: any).Magnitude
 		if not closest or dist < cDist then
 			closest = point
 			cDist = dist
@@ -48,7 +48,7 @@ function Cellular.new(...): NoiseSolver
 	local self = Solver.new(...)
 	self.Points = {}
 	setmetatable(self, Cellular)
-	return self
+	return self :: any
 end
 
 setmetatable(Cellular, Solver)

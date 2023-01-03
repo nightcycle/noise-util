@@ -1,8 +1,13 @@
 return function(coreGui)
 	-- print("Running")
-	local Noise = require(script.Parent)
-	local Vector = require(script.Parent.Parent:WaitForChild("Algebra"):WaitForChild("Vector"))
-	local Matrix = require(script.Parent.Parent:WaitForChild("Algebra"):WaitForChild("Matrix"))
+	local Package = script.Parent
+	local Packages = Package.Parent
+
+	local Noise = require(Package)
+	local Vector = require(Packages:WaitForChild("Vector"))
+	export type Vector = Vector.Vector
+	local Matrix = require(Packages:WaitForChild("Matrix"))
+	type Matrix = Matrix.Matrix
 
 	local Map = Noise.Cellular.new()
 	Map:SetFrequency(1)

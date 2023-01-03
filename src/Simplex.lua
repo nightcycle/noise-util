@@ -28,8 +28,8 @@ function Simplex:Get(vec: Vector): number
 	end
 
 	local sideLength: number = 1 / self.Frequency
-	local minPoint: Vector = (vec / sideLength):Floor() * sideLength
-	local limit: Vector = Vector.one(vec.Size) * sideLength
+	local minPoint: Vector = (vec / sideLength :: any):Floor() * sideLength
+	local limit: Vector = Vector.one(vec.Size) * (sideLength :: any)
 	local points = { minPoint }
 
 	for d = 1, vec.Size do
@@ -44,7 +44,7 @@ function Simplex:Get(vec: Vector): number
 				return
 			end
 			if size == 1 then
-				table.insert(points, minPoint + Vector.new(unpack(list)) * limit)
+				table.insert(points, minPoint + Vector.new(unpack(list)) * (limit :: any))
 			end
 			for i = 1, size do
 				permutate(list, size - 1, n)
@@ -86,9 +86,9 @@ function Simplex:Get(vec: Vector): number
 			local v1 = pointValueRegistry[p1]
 			local v2 = pointValueRegistry[p2]
 
-			local a = (p1 - vec).Magnitude
-			local b = (p1 - p2).Magnitude
-			local c = (p2 - vec).Magnitude
+			local a = (p1 - vec :: any).Magnitude
+			local b = (p1 - p2 :: any).Magnitude
+			local c = (p2 - vec :: any).Magnitude
 
 			local numerator = (a ^ 2) + (b ^ 2) - (c ^ 2)
 			local denominator = (2 * a * b)
@@ -98,7 +98,7 @@ function Simplex:Get(vec: Vector): number
 				angleS = 0
 			end
 
-			local adjDist: number = math.min(math.cos(angleS) * (vec - p1).Magnitude, (p1 - p2).Magnitude)
+			local adjDist: number = math.min(math.cos(angleS) * (vec - p1 :: any).Magnitude, (p1 - p2 :: any).Magnitude)
 
 			local alpha = adjDist / b
 			alpha = (alpha ^ 2) * (3.0 - 2.0 * alpha)
@@ -127,8 +127,7 @@ function Simplex:Clone(): NoiseSolver
 end
 
 function Simplex.new(...): NoiseSolver
-	local self = Solver.new(...)
-	setmetatable(self, Simplex)
+	local self: NoiseSolver = setmetatable(Solver.new(...), Simplex) :: any
 	return self
 end
 

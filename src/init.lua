@@ -13,7 +13,6 @@ export type NoiseSolver = Solver.NoiseSolver
 
 --- @class Noise
 --- A library of NoiseSolvers that combined can allow a developer to create many procedurally generated assets and mechanics.
-
 local Noise = {}
 Noise.__index = Noise
 

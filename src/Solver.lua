@@ -1,17 +1,75 @@
 --!strict
---- @class NoiseSolver
---- A N-Dimensional matrix class meant to work with the N-Dimensional Vector class
-local NoiseSolver: {[any]: any} = {}
-NoiseSolver.__index = NoiseSolver
-
 local Vector = require(script.Parent.Parent.Vector)
 type Vector = Vector.Vector
 
 local Matrix = require(script.Parent.Parent.Matrix)
 type Matrix = Matrix.Matrix
 
-
 type Alpha = number
+export type NoiseSolver = {
+	__index: NoiseSolver,
+	__newindex: (self: NoiseSolver, k: any, v: any) -> nil,
+	Seed: number,
+	Frequency: number, --set either manually or by parent solver
+	Amplitude: number, --set either manually or by parent solver
+	Octaves: {[any]: NoiseSolver},
+	Lacunarity: number, --frequency increase rate of octaves
+	Persistence: number, --decreasing amplitude of octaves
+	Points: {[any]: Vector},
+	SeparationLimit: number,
+
+	translateVector: (vec: Vector | Vector2 | Vector3) -> Vector,
+	_Rand: (self: NoiseSolver, vec: Vector) -> Alpha,
+	_UpdateSeparationLimit: (self: NoiseSolver) -> nil,
+	_CopyConfiguration: (self: NoiseSolver, other: NoiseSolver) -> nil,
+	ToMatrix: (self: NoiseSolver, size: number) -> Matrix,
+	Debug: (self: NoiseSolver, parentGui: Frame, scale: number?, rMatrix: Matrix, gMatrix: Matrix, bMatrix: Matrix) -> nil,
+	_Compile: (self: NoiseSolver, vec: Vector, base: number) -> number,
+	_UpdateOctaves: (self: NoiseSolver) -> nil,
+	_TranslatePoints: (self: NoiseSolver, pointVectors: { [number]: Vector | Vector2 | Vector3 }) -> {[number]: Vector},
+	GeneratePoints: (self: NoiseSolver, count: number, min: Vector, max: Vector) -> nil,
+	SetPoints: (self: NoiseSolver, pointVectors: { [number]: Vector | Vector2 | Vector3 }) -> nil,
+	InsertOctave: (self: NoiseSolver, solver: NoiseSolver) -> nil,
+	SetPersistence: (self: NoiseSolver, value: number) -> nil,
+	SetLacunarity: (self: NoiseSolver, value: number) -> nil,
+	SetAmplitude: (self: NoiseSolver, value: number) -> nil,
+	SetFrequency: (self: NoiseSolver, value: number) -> nil,
+	SetSeed: (self: NoiseSolver, value: number) -> nil,
+	Get: (self: NoiseSolver, vec: Vector | Vector2 | Vector3) -> number,
+	Clone: (self: NoiseSolver) -> NoiseSolver,
+	Set: (
+		self: NoiseSolver,
+		seed: number?,
+		frequency: number?,
+		amplitude: number?,
+		lacunarity: number?,
+		persistence: number?,
+		pointVectors: { [number]: Vector}?
+	) -> nil,
+	_newEmpty: () -> NoiseSolver,
+	new: (
+		seed: number?,
+		frequency: number?,
+		amplitude: number?,
+		lacunarity: number?,
+		persistence: number?,
+		pointVectors: { [number]: Vector}?
+	) -> NoiseSolver,
+}
+
+--- @class NoiseSolver
+--- A N-Dimensional matrix class meant to work with the N-Dimensional Vector class
+local NoiseSolver: NoiseSolver = {} :: any
+NoiseSolver.__index = NoiseSolver
+
+function NoiseSolver:__newindex(k, v): nil
+	if self[k] ~= nil then
+		rawset(self, k, v)
+	else
+		error(tostring(k) .. " is not a valid solver property")
+	end
+	return nil
+end
 
 --- An easy way to convert an unknown type into a vector
 function NoiseSolver.translateVector(vec: Vector | Vector2 | Vector3): Vector
@@ -22,17 +80,7 @@ function NoiseSolver.translateVector(vec: Vector | Vector2 | Vector3): Vector
 		return Vector.new(vec.X, vec.Y, vec.Z)
 	end
 	assert(typeof(vec) ~= "Vector2" and typeof(vec) ~= "Vector3")
-	assert(getmetatable(vec) == Vector)
 	return vec
-end
-
-function NoiseSolver:__newindex(k, v): nil
-	if self[k] ~= nil then
-		rawset(self, k, v)
-	else
-		error(tostring(k) .. " is not a valid solver property")
-	end
-	return nil
 end
 
 --- Returns a random number between 0 and 1 that should change dramatically and pseudo-randomly with small nudges. A 2d map using this would look like static.
@@ -45,7 +93,7 @@ function NoiseSolver:_Rand(vec: Vector): Alpha
 	return Random.new(seed):NextNumber()
 end
 
-function NoiseSolver:_SetSeparationLimit(): nil
+function NoiseSolver:_UpdateSeparationLimit(): nil
 	local points: { [number]: Vector } = self.Points
 	if #points <= 1 then
 		rawset(self, "SeparationLimit", 0)
@@ -57,7 +105,6 @@ function NoiseSolver:_SetSeparationLimit(): nil
 		local closest
 		local cDist = math.huge
 		for i, point: Vector in ipairs(points) do
-			assert(getmetatable(point) == Vector)
 			if not Vector.__eq(point, p) then
 				local offset: Vector = Vector.__sub(point, p)
 				local dist: number = offset.Magnitude
@@ -110,7 +157,8 @@ function NoiseSolver:ToMatrix(size: number): Matrix
 		local values = {}
 		for y = 1, size do
 			local start = tick()
-			values[y] = self:Get(Vector.new(x - 1, y - 1) / size)
+			local alpha: Vector = Vector.new(x - 1, y - 1) / (size :: any)
+			values[y] = self:Get(alpha)
 			totalDuration += tick() - start
 			totalSolves += 1
 		end
@@ -121,12 +169,15 @@ function NoiseSolver:ToMatrix(size: number): Matrix
 end
 
 --- Allows you to quickly render a 2d noise map with control over the red, green, and blue channels.
-function NoiseSolver:Debug(parentGui: Frame, scale: number?, rMatrix: Matrix, gMatrix: Matrix, bMatrix: Matrix): nil
+function NoiseSolver:Debug(parentGui: Frame, scale: number?, rMatrix: Matrix, gMatrix: Matrix?, bMatrix: Matrix?): nil
 
 	scale = scale or 1
 	assert(scale ~= nil)
+
 	gMatrix = gMatrix or rMatrix
+	assert(gMatrix ~= nil)
 	bMatrix = bMatrix or gMatrix
+	assert(bMatrix ~= nil)
 
 	for x, vec in ipairs(rMatrix:ToVectors()) do
 		for y, r in ipairs(vec:ToScalars()) do
@@ -181,8 +232,6 @@ end
 --- Creates points randomly
 function NoiseSolver:GeneratePoints(count: number, min: Vector, max: Vector): nil
 	assert(count > 0, "Bad count")
-	assert(getmetatable(min) == Vector)
-	assert(getmetatable(max) == Vector)
 
 	local limit: Vector = Vector.__sub(max, min)
 	local rand = Random.new(self.Seed)
@@ -195,7 +244,7 @@ function NoiseSolver:GeneratePoints(count: number, min: Vector, max: Vector): ni
 		table.insert(points, Vector.new(unpack(values)))
 	end
 	rawset(self, "Points", points)
-	self:_SetSeparationLimit()
+	self:_UpdateSeparationLimit()
 	return nil
 end
 
@@ -203,7 +252,7 @@ end
 function NoiseSolver:SetPoints(pointVectors: { [number]: Vector | Vector2 | Vector3 }): nil
 	assert(pointVectors ~= nil, "Bad point vectors")
 	rawset(self, "Points", self:_TranslatePoints(pointVectors))
-	self:_SetSeparationLimit()
+	self:_UpdateSeparationLimit()
 	return nil
 end
 
@@ -256,16 +305,16 @@ function NoiseSolver:SetSeed(seed: number): nil
 end
 
 --- Retrieves the value for the noise solver at that vector.
-function NoiseSolver:Get(vec: Vector): number
-	vec = self.translateVector(vec)
-	return self:_Compile(vec, self:_Rand(vec))
+function NoiseSolver:Get(vec: Vector | Vector2 | Vector3): number
+	local translatedVec: Vector = self.translateVector(vec)
+	return self:_Compile(translatedVec, self:_Rand(translatedVec))
 end
 
 --- Creates a duplicate noise solver with the same configuration.
 function NoiseSolver:Clone(): NoiseSolver
 	local solver: NoiseSolver = NoiseSolver.new()
-	assert(getmetatable(solver) == NoiseSolver)
-	return NoiseSolver:_CopyConfiguration(solver, self)
+	NoiseSolver:_CopyConfiguration(self)
+	return solver
 end
 
 --- Allows for the configuration of all properties at once with the exception of octaves.
@@ -286,7 +335,7 @@ function NoiseSolver:Set(
 	if pointVectors then
 		local points: {[number]: Vector} = self:_TranslatePoints(pointVectors)
 		rawset(self, "Points", points)
-		self:_SetSeparationLimit()
+		self:_UpdateSeparationLimit()
 	end
 
 	self:_UpdateOctaves()
@@ -322,8 +371,8 @@ end
 --- Octaves operate here as layered solvers, providing more detail at different configurations and scales. For terrain, the base solver might be for mountains, while smaller octaves will provide hills.
 
 
-function NoiseSolver._new()
-	local self: {[string]: any} = {
+function NoiseSolver._newEmpty()
+	local self: NoiseSolver = setmetatable({
 		Seed = 1,
 		Frequency = 1, --set either manually or by parent solver
 		Amplitude = 1, --set either manually or by parent solver
@@ -332,9 +381,7 @@ function NoiseSolver._new()
 		Persistence = 1, --decreasing amplitude of octaves
 		Points = {} :: {[any]: Vector},
 		SeparationLimit = 0,
-	}
-
-	setmetatable(self, NoiseSolver)
+	}, NoiseSolver) :: any
 
 	return self
 end
@@ -348,9 +395,7 @@ function NoiseSolver.new(
 	persistence: number?,
 	pointVectors: { [number]: any }?
 )
-	local solver: NoiseSolver = NoiseSolver._new()
-	assert(getmetatable(solver) == NoiseSolver)
-
+	local solver: NoiseSolver = NoiseSolver._newEmpty()
 	solver:Set(
 		seed,
 		frequency,
@@ -361,7 +406,5 @@ function NoiseSolver.new(
 	)
 	return solver
 end
-
-export type NoiseSolver = typeof(NoiseSolver._new())
 
 return NoiseSolver
